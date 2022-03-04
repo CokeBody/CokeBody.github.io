@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -193,4 +193,123 @@
 
   </div>
 </body>
+</html> -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no"> 
+		<title>高德地图</title>
+		<style>
+			/* 地图容器样式 */
+			#container {
+				width:960px; 
+				height: 500px; 
+			}  
+		</style>
+	</head>
+	<body>
+		<!-- 地图容器 -->
+		<div id="container"></div> 
+		<!-- 地址文本 -->
+		<div id="address"></div> 
+	</body>
+	<!-- 引入高度地图 -->
+	<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=1b11653382e257622bcce33e26afef6d"></script>
+	<!-- 引入Jquery -->
+	<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+	<script>
+		//定义全局变量
+		var lng = 0;
+		var lat = 0;
+		var map = null;
+		var marker = null;
+		var address = "";
+		$(function(){
+			/* 初始换地址中心位置 */
+			map = new AMap.Map('container', {
+				zoom:14,//级别
+				center: [113.222698, 23.156078],//中心点坐标
+			});
+			AMap.plugin("AMap.Geolocation", function () {
+			  var geolocation = new AMap.Geolocation({
+				enableHighAccuracy: true, //是否使用高精度定位，默认:true
+				timeout: 10000, //超过10秒后停止定位，默认：5s
+				position: "RB", //定位按钮的停靠位置
+				offset: [10, 20], //定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+				zoomToAccuracy: true, //定位成功后是否自动调整地图视野到定位点
+			  });
+			  //手机获取地理位置失败需使用Https
+			  geolocation.getCurrentPosition(function (status, result) {
+				console.log(JSON.stringify(result));
+				if (status == "complete") {
+				  lng = result.position.lng;
+				  lat = result.position.lat;
+				  //alert("当前经度：" + lng + " 纬度:" + lat);
+				  alert("当前经度：" + lng + " 纬度:" + lat);
+				  getLngLat(lng, lat);
+				} else {
+				  console.log(result);
+				}
+			  });
+			  //标点
+			  // marker = new AMap.Marker({
+			  //   position: new AMap.LngLat(113.431434190539, 23.163811035157), // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+			  // });
+			  // map.add(marker);
+			});
+			
+			/* 获取经纬度坐标 */
+			function getLngLat(lng, lat){
+				var url = "https://restapi.amap.com/v3/assistant/coordinate/convert?output=json&coordsys=gps&key=1b11653382e257622bcce33e26afef6d&locations=" + lng + ","+lat;
+				$.get(url, function(data){
+					if(data.status == "1"){
+						var tem = data.locations.split(",");
+						lng = tem[0];
+						lat = tem[1];
+						map.setCenter([lng, lat]);
+						marker = new AMap.Marker({
+						  position: new AMap.LngLat(lng, lat), // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+						});
+						map.add(marker);
+						console.log("经纬度：" + lng + " 纬度:" + lat);
+						getAddress(lng, lat);
+					}else{
+						alert("系统异常！");
+					}
+				});
+			}
+			
+			/* 获取经纬度位置信息 */
+			function getAddress(lng, lat){
+				var url = "https://restapi.amap.com/v3/geocode/regeo?key=1b11653382e257622bcce33e26afef6d&output=json&location=" + lng + ","+lat;
+				$.get(url, function(data){
+					if(data.status == "1"){
+						address = "当前位置: " + data.regeocode.formatted_address;
+						console.log(address);
+						$("#address").text(address);
+					}else{
+						alert("系统异常！");
+					}
+				});
+			}
+			
+			function getIPAdress() {
+			  var interfaces = require('os').networkInterfaces();
+			  for (var devName in interfaces) {
+			    var iface = interfaces[devName];
+			    for (var i = 0; i < iface.length; i++) {
+			      var alias = iface[i];
+			      if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+			        return alias.address;
+			      }
+			    }
+			  }
+			}
+		});
+		
+	
+		
+		
+	</script>
 </html>
